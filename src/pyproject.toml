@@ -1,12 +1,12 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling >= 1.29"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.sdist]
-include = ["/bdb"]
+include = ["/bacon_db"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["bdb"]
+packages = ["bacon_db"]
 
 [project]
 name = "bacon-db"
