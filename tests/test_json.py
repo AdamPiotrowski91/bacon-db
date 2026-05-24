@@ -128,6 +128,25 @@ class TestJSONHandler:
 
     # region QoL
 
+    def test_init(self, temp_folder_path: p.Path):
+        path = temp_folder_path / "db.json"
+
+        assert not path.exists()
+
+        # Path
+        try:
+            # does not raise
+            assert j.JSONHandler(path).create().read() == []
+        finally:
+            path.unlink(missing_ok=True)
+
+        # string
+        try:
+            # does not raise
+            assert j.JSONHandler(str(path)).create().read() == []
+        finally:
+            path.unlink(missing_ok=True)
+
     def test_can_chain_methods(self, temp_folder_path: p.Path):
         path = temp_folder_path / "db.json"
 
