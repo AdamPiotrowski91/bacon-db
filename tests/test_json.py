@@ -3,6 +3,7 @@ import json
 import pathlib as p
 
 import pytest
+import pytest_mock as mock
 
 import bacon_db.json as j
 
@@ -175,6 +176,28 @@ class TestJSONHandler:
             with pytest.raises(j.JSONHandlerError):
                 # cache does not help, we still need the file to exist
                 handler.read()
+        finally:
+            path.unlink(missing_ok=True)
+
+    def test_exists(self, temp_folder_path: p.Path, mocker: mock.MockerFixture):
+        path = temp_folder_path / "db.json"
+
+        assert not path.exists()
+
+        spy = mocker.spy(j.p.Path, "exists")
+        handler = j.JSONHandler(path)
+
+        spy.assert_not_called()
+        assert path.exists() == handler.exists()
+        assert spy.call_count == 2
+
+        try:
+            handler.create()
+            spy.reset_mock()
+
+            spy.assert_not_called()
+            assert path.exists() == handler.exists()
+            assert spy.call_count == 2
         finally:
             path.unlink(missing_ok=True)
 

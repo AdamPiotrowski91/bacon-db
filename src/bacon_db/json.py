@@ -3,15 +3,23 @@ import pathlib as p
 import threading as th
 from typing import Any, Self
 
+# region Helpers
+
 type Data = list[dict[str, Any]]
 
 
 # TODO: consider that returned data is still a reference to cache and changes in-place may affect it
+# TODO: potential race condition between checking for file existence and actually applying lock
 # TODO: implement opt-in backup mechanics
 
 
 class JSONHandlerError(RuntimeError):
     """Error Raised by `JSONHandler` class during runtime."""
+
+
+# endregion
+
+# region Implementation
 
 
 class JSONHandler:
@@ -37,6 +45,9 @@ class JSONHandler:
     @classmethod
     def _assert_data(cls, data: Any) -> None:
         assert isinstance(c := data, list) and all(isinstance(elem, dict) for elem in c)
+
+    def exists(self) -> bool:
+        return self._path.exists()
 
     def read(self) -> Data:
         """Read Data from `path` this handler was assigned to.
@@ -118,3 +129,6 @@ class JSONHandler:
             self._cache = new_data
 
         return self
+
+
+# endregion
