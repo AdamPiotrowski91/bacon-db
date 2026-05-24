@@ -111,7 +111,7 @@ class TestJSONHandler:
         finally:
             path.unlink(missing_ok=True)
 
-    @pytest.mark.parametrize("data", [set(), (), {}, "string", 21])
+    @pytest.mark.parametrize("data", [set(), (), {}, "string", 21, [1, 2]])
     def test_write_existent_wrong_data(self, temp_folder_path: p.Path, data):
         path = temp_folder_path / "db.json"
 
@@ -137,6 +137,25 @@ class TestJSONHandler:
 
         try:
             assert j.JSONHandler(path).create().write(data).read() == data
+        finally:
+            path.unlink(missing_ok=True)
+
+    def test_can_handle_file_problems_during_runtime(self, temp_folder_path: p.Path):
+        path = temp_folder_path / "db.json"
+
+        assert not path.exists()
+
+        try:
+            handler = j.JSONHandler(path)
+            handler.create()
+
+            assert handler.read() == []
+
+            path.unlink()
+
+            with pytest.raises(j.JSONHandlerError):
+                # cache does not help, we still need the file to exist
+                handler.read()
         finally:
             path.unlink(missing_ok=True)
 
