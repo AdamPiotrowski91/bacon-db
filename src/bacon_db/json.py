@@ -1,7 +1,7 @@
 import json
 import pathlib as p
 import threading as th
-from typing import Any
+from typing import Any, Self
 
 type Data = list[dict[str, Any]]
 
@@ -39,6 +39,15 @@ class JSONHandler:
         assert isinstance(c := data, list) and all(isinstance(elem, dict) for elem in c)
 
     def read(self) -> Data:
+        """Read Data from `path` this handler was assigned to.
+
+        Returns:
+            list of dicts of data if exists
+
+        Raises:
+            `JSONHandlerError` if something unexpected happened
+        """
+
         path = self._path
 
         if not path.exists():
@@ -63,7 +72,16 @@ class JSONHandler:
         self._assert_data(c := self._cache)
         return c
 
-    def create(self) -> None:
+    def create(self) -> Self:
+        """Create file under `path` assigned to this handler.
+
+        Returns:
+            `self` for chaining
+
+        Raises:
+            `JSONHandlerError` if something unexpected happened
+        """
+
         path = self._path
 
         if path.exists():
@@ -72,7 +90,22 @@ class JSONHandler:
         with self._lock_data, open(path, "w") as f:
             json.dump([], f)
 
-    def write(self, new_data: Data) -> None:
+        return self
+
+    def write(self, new_data: Data) -> Self:
+        """Write Data to `path` this handler was assigned to.
+
+        Arguments:
+            `new_data` (`Data`): new data to use for overwriting
+
+        Returns:
+            `self` for chaining
+
+        Raises:
+            `JSONHandlerError` if something unexpected happened.
+            `AssertionError` if `new_data` is invalid.
+        """
+
         path = self._path
 
         if not path.exists():
@@ -83,3 +116,5 @@ class JSONHandler:
         with self._lock_data, open(path, "w") as f:
             json.dump(new_data, f)
             self._cache = new_data
+
+        return self

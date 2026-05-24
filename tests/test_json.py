@@ -60,9 +60,84 @@ class TestJSONHandler:
     # endregion
 
     # region Creating
-    # TODO: implement
+
+    def test_create_existent(self, temp_file_generator):
+        with temp_file_generator([]) as file:
+            assert isinstance(file, p.Path)
+            assert file.exists()
+
+            with pytest.raises(j.JSONHandlerError):
+                j.JSONHandler(file).create()
+
+    def test_create_nonexistent(self, temp_folder_path: p.Path):
+        path = temp_folder_path / "db.json"
+
+        assert not path.exists()
+
+        try:
+            handler = j.JSONHandler(path)
+            handler.create()
+
+            assert path.exists()
+            assert handler.read() == []
+        finally:
+            path.unlink(missing_ok=True)
+
     # endregion
 
     # region Writing
-    # TODO: implement
+
+    def test_write_nonexistent(self, temp_folder_path: p.Path):
+        path = temp_folder_path / "nonexistent.json"
+
+        assert not path.exists()
+
+        with pytest.raises(j.JSONHandlerError):
+            j.JSONHandler(path).write([])
+
+    def test_write_existent_good_data(self, temp_folder_path: p.Path):
+        path = temp_folder_path / "db.json"
+
+        try:
+            handler = j.JSONHandler(path)
+            handler.create()
+
+            assert handler.read() == []
+
+            data = [{"one": 1}]
+            handler.write(data)
+
+            assert handler.read() == data
+        finally:
+            path.unlink(missing_ok=True)
+
+    @pytest.mark.parametrize("data", [set(), (), {}, "string", 21])
+    def test_write_existent_wrong_data(self, temp_folder_path: p.Path, data):
+        path = temp_folder_path / "db.json"
+
+        try:
+            handler = j.JSONHandler(path)
+            handler.create()
+
+            with pytest.raises(AssertionError):
+                handler.write(data)
+        finally:
+            path.unlink(missing_ok=True)
+
+    # endregion
+
+    # region QoL
+
+    def test_can_chain_methods(self, temp_folder_path: p.Path):
+        path = temp_folder_path / "db.json"
+
+        assert not path.exists()
+
+        data = [{"one": 1}, {"one": 2}]
+
+        try:
+            assert j.JSONHandler(path).create().write(data).read() == data
+        finally:
+            path.unlink(missing_ok=True)
+
     # endregion
