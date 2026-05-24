@@ -31,11 +31,7 @@ wheels/
 Untitled*
 *.vscode*
 MANIFEST
-.pre-commit*
-validation_scripts
 tox.ini
-container/
-scripts/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -72,9 +68,6 @@ instance/
 
 # Scrapy stuff:
 .scrapy
-
-# Sphinx documentation
-docs/_build/
 
 # PyBuilder
 target/
