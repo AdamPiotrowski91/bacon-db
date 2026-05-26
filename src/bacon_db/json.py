@@ -5,7 +5,7 @@ from typing import Any, Self
 
 # region Helpers
 
-type Data = list[dict[str, Any]]
+type DBData = list[dict[str, Any]]
 
 
 # TODO: consider that returned data is still a reference to cache and changes in-place may affect it
@@ -25,7 +25,7 @@ class JSONHandlerError(RuntimeError):
 class JSONHandler:
     def __init__(self, path: p.Path | str) -> None:
         self._path = p.Path(path).resolve().absolute()
-        self._cache_raw: Data | None = None
+        self._cache_raw: DBData | None = None
 
         # Locks
         self._lock_data = th.Lock()
@@ -49,7 +49,7 @@ class JSONHandler:
     def exists(self) -> bool:
         return self._path.exists()
 
-    def read(self) -> Data:
+    def read(self) -> DBData:
         """Read Data from `path` this handler was assigned to.
 
         Returns:
@@ -103,7 +103,7 @@ class JSONHandler:
 
         return self
 
-    def write(self, new_data: Data) -> Self:
+    def write(self, new_data: DBData) -> Self:
         """Write Data to `path` this handler was assigned to.
 
         Arguments:
