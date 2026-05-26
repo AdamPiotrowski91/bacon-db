@@ -55,6 +55,7 @@ class TableHandler:
                 be parsed into and from.
             `sort_key` (`str | list/tuple[str]`): either column name or iterable
                 of column names to use to find values for sorting table rows.
+                Those kesy are also treated as primary keys for uniqueness and lookup.
             `config` (`TableConfig`, optional): table handler configuration. A set
                 of rules this handler will use for any actions. Will use default
                 set of rules if not provided (see definition of `TableConfig` dataclass)
