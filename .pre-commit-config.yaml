@@ -6,22 +6,10 @@ repos:
       - id: trailing-whitespace
       - id: check-yaml
 
-  - repo: https://github.com/PyCQA/isort
-    rev: 8.0.1
+  - repo: local
     hooks:
-      - id: isort
-        name: isort (python)
-        language_version: python3
-
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
-    hooks:
-      - id: codespell
-        name: codespell (typo checker)
-        entry: codespell
+      - id: precommit-script
+        name: custom precommit script
+        entry: powershell.exe -NoProfile -ExecutionPolicy Bypass -File precommit.ps1
         language: system
-        types: [text, python, yaml]
-        files: \.(py|txt|md|rst|yaml|yml)$
-        args:
-          - --check-filenames
-          - --quiet
+        files: \.(py|md|txt|rst|yaml|yml)$

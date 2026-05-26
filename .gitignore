@@ -24,7 +24,6 @@ var/
 wheels/
 *.egg-info/
 .installed.cfg
-*.sh
 *.egg
 *node_modules*
 *DS_Store*
