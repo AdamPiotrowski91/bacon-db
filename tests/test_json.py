@@ -15,7 +15,7 @@ class TestJSONHandler:
     def temp_file_generator(self, temp_folder_path):
 
         @contextlib.contextmanager
-        def __fn(data: j.Data):
+        def __fn(data: j.DBData):
             path: p.Path = temp_folder_path / "_temp_.json"
             assert isinstance(path, p.Path)
 

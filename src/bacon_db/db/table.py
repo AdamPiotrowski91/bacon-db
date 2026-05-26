@@ -73,15 +73,20 @@ class TableHandler:
 
     def _prevalidate(self) -> None:
         try:
-            assert self._path.is_file()
+            assert not self._path.exists() or self._path.is_file()
 
             for col_name, col_type in self._columns.items():
                 assert isinstance(col_name, str) and col_name
-                assert (
-                    isinstance(col_type, type)
-                    and callable(col_type)
-                    and count_required_args(col_type) == 1
-                )
+                try:
+                    ii = isinstance(col_type, type)
+                    c = callable(col_type)
+                    s = count_required_args(col_type) <= 1
+
+                    assert ii and c and s, f"{ii=} {c=} {s=}"
+                except ValueError as err:
+                    if "no signature found for builtin type" in str(err):
+                        continue
+                    raise
         except Exception as err:
             raise TableHandlerError(
                 f"`path` or `columns` setup is invalid for table '{self._path}'."
@@ -90,17 +95,6 @@ class TableHandler:
     def _create_if_needed(self) -> None:
         if not self._path.exists():
             self._json_handler.create()
-
-    def read(self) -> DBData:
-        """TODO"""
-
-        if self._cache is None:
-            self._create_if_needed()
-            data = self._json_handler.read()
-            self._parse(data)
-            self._cache = data
-
-        return self._cache
 
     def _parse(self, data: DBData) -> None:
         """Parses json data in-place."""
@@ -113,6 +107,17 @@ class TableHandler:
             raise TableHandlerError(
                 f"Could not parse data for table '{self._path}'"
             ) from err
+
+    def read(self) -> DBData:
+        """TODO"""
+
+        if self._cache is None:
+            self._create_if_needed()
+            data = self._json_handler.read()
+            self._parse(data)
+            self._cache = data
+
+        return self._cache
 
 
 # endregion
