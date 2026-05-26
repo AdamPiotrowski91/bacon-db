@@ -1,6 +1,7 @@
 import inspect as ins
 
 
+# TODO: when used, does not account for methods without args
 def count_required_args(fn):
     """Count required arguments in a callable."""
 

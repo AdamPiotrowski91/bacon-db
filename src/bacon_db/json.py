@@ -37,7 +37,7 @@ class JSONHandler:
             return self._cache_raw
 
     @_cache.setter
-    def _cache(self, value):
+    def _cache(self, value: DBData | None):
         with self._lock_cache:
             self._cache_raw = value
             return self._cache_raw

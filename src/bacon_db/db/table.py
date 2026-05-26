@@ -1,4 +1,5 @@
 import pathlib as p
+import threading as th
 from dataclasses import dataclass
 
 from .. import json as j
@@ -42,6 +43,7 @@ class TableHandler:
         self,
         path: str | p.Path,
         columns: TableColumnsSetup,
+        sort_keys: str | tuple[str, ...] | list[str],
         config: TableConfig | None = None,
     ) -> None:
         """
@@ -51,6 +53,8 @@ class TableHandler:
             `columns` (`TableColumnsSetup`): a dictionary of keys being column
                 names and values being python data type callables the values will
                 be parsed into and from.
+            `sort_key` (`str | list/tuple[str]`): either column name or iterable
+                of column names to use to find values for sorting table rows.
             `config` (`TableConfig`, optional): table handler configuration. A set
                 of rules this handler will use for any actions. Will use default
                 set of rules if not provided (see definition of `TableConfig` dataclass)
@@ -58,14 +62,27 @@ class TableHandler:
 
         self._path = p.Path(path).resolve()
         self._columns = columns
+        self._sort_keys = (sort_keys,) if isinstance(sort_keys, str) else sort_keys
         self._config = config or TableConfig()
 
         self._prevalidate()
         self._setup()
 
+    @property
+    def _cache(self):
+        with self._lock_cache:
+            return self._cache_raw
+
+    @_cache.setter
+    def _cache(self, value: DBData | None):
+        with self._lock_cache:
+            self._cache_raw = value
+            return self._cache_raw
+
     def _setup(self) -> None:
+        self._lock_cache = th.Lock()
         self._json_handler = j.JSONHandler(self._path)
-        self._cache: DBData | None = None
+        self._cache_raw: DBData | None = None
 
         if self._config.create_backup and self._path.exists():
             backup_path = get_backup_path_from_path(self._path)
@@ -74,6 +91,9 @@ class TableHandler:
     def _prevalidate(self) -> None:
         try:
             assert not self._path.exists() or self._path.is_file()
+            assert isinstance(sk := self._sort_keys, (list, tuple)) and all(
+                isinstance(k, str) and k in self._columns for k in sk
+            )
 
             for col_name, col_type in self._columns.items():
                 assert isinstance(col_name, str) and col_name
@@ -89,10 +109,10 @@ class TableHandler:
                     raise
         except Exception as err:
             raise TableHandlerError(
-                f"`path` or `columns` setup is invalid for table '{self._path}'."
+                f"Setup is invalid for table '{self._path}'."
             ) from err
 
-    def _create_if_needed(self) -> None:
+    def _create_file_if_needed(self) -> None:
         if not self._path.exists():
             self._json_handler.create()
 
@@ -111,13 +131,16 @@ class TableHandler:
     def read(self) -> DBData:
         """TODO"""
 
-        if self._cache is None:
-            self._create_if_needed()
-            data = self._json_handler.read()
-            self._parse(data)
-            self._cache = data
+        ret = self._cache
 
-        return self._cache
+        if ret is None:
+            self._create_file_if_needed()
+            ret = self._json_handler.read()
+            self._parse(ret)
+            ret.sort(key=lambda row: tuple(row[key] for key in self._sort_keys))
+            self._cache = ret
+
+        return ret
 
 
 # endregion
