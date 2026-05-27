@@ -37,7 +37,10 @@ class TableHandlerError(RuntimeError):
 
 
 class TableHandler:
-    """Handler for each specific database file representing one raw data table."""
+    """Handler for each specific database file representing one raw data table.
+
+    Each row of data will have a unique ID column generated on creation.
+    """
 
     def __init__(
         self,
@@ -55,14 +58,13 @@ class TableHandler:
                 be parsed into and from.
             `sort_key` (`str | list/tuple[str]`): either column name or iterable
                 of column names to use to find values for sorting table rows.
-                Those kesy are also treated as primary keys for uniqueness and lookup.
             `config` (`TableConfig`, optional): table handler configuration. A set
                 of rules this handler will use for any actions. Will use default
                 set of rules if not provided (see definition of `TableConfig` dataclass)
         """
 
         self._path = p.Path(path).resolve()
-        self._columns = columns
+        self._columns: TableColumnsSetup = {**columns, "id": str}
         self._sort_keys = (sort_keys,) if isinstance(sort_keys, str) else sort_keys
         self._config = config or TableConfig()
 

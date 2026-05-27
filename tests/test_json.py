@@ -1,6 +1,7 @@
 import contextlib
 import json
 import pathlib as p
+import threading as th
 
 import pytest
 import pytest_mock as mock
@@ -200,5 +201,72 @@ class TestJSONHandler:
             assert spy.call_count == 2
         finally:
             path.unlink(missing_ok=True)
+
+    # endregion
+
+    # region Async
+
+    @classmethod
+    def assert_async_action(
+        cls, handler: j.JSONHandler, lock_prop: str, data: j.DBData | None = None
+    ):
+        try:
+            getattr(handler, lock_prop).acquire()
+            finished = th.Event()
+
+            def action():
+                if data:
+                    handler.write(data)
+                    finished.set()
+                    assert handler.read() == data
+                else:
+                    assert handler.read() == []
+                    finished.set()
+
+            t = th.Thread(target=action)
+            t.start()
+
+            assert not finished.wait(0.1)
+
+            getattr(handler, lock_prop).release()
+
+            assert finished.wait(0.1)
+        finally:
+            with contextlib.suppress(Exception):
+                t.join()  # type: ignore
+
+    def test_async_read(self, temp_file_generator):
+        with temp_file_generator([]) as path:
+            assert isinstance(path, p.Path)
+
+            handler = j.JSONHandler(path)
+
+            self.assert_async_action(handler, "_lock_data")
+
+    def test_async_read_cache(self, temp_file_generator):
+        with temp_file_generator([]) as path:
+            assert isinstance(path, p.Path)
+
+            handler = j.JSONHandler(path)
+            handler.read()  # set cache
+
+            self.assert_async_action(handler, "_lock_cache")
+
+    def test_async_write(self, temp_file_generator):
+        with temp_file_generator([]) as path:
+            assert isinstance(path, p.Path)
+
+            handler = j.JSONHandler(path)
+
+            self.assert_async_action(handler, "_lock_data", [{"col": 1}])
+
+    def test_async_write_cache(self, temp_file_generator):
+        with temp_file_generator([]) as path:
+            assert isinstance(path, p.Path)
+
+            handler = j.JSONHandler(path)
+            handler.read()  # set cache
+
+            self.assert_async_action(handler, "_lock_cache", [{"col": 1}])
 
     # endregion
