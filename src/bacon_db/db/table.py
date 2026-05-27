@@ -159,6 +159,7 @@ class TableHandler:
 
         ret: RowData = {}
 
+        # unparse
         try:
             for col_name, col_val in row_data.items():
                 ret[col_name] = str(col_val)
@@ -166,6 +167,12 @@ class TableHandler:
             raise TableHandlerError("Could not unparse `row_data`.") from err
 
         return ret
+
+    def _get_ids(self, data: DBData) -> tuple[str, ...]:
+        return tuple(r["id"] for r in data)
+
+    def _get_indexing(self, data: DBData) -> dict[str, int]:
+        return {row["id"]: i for i, row in enumerate(data)}
 
     def read(self) -> DBData:
         """TODO"""
@@ -187,11 +194,37 @@ class TableHandler:
         if not rows_data:
             return self  # noop
 
+        # TODO: consider if sorting should be done by unparsed data
         new_db_data: DBData = sorted(
             [self._unparse({**row, "id": unique_id()}) for row in rows_data]
             + [self._unparse(row) for row in self.read()],
             key=self._sorter,
         )
+
+        self._json_handler.write(new_db_data)
+        self._cache = None
+
+        return self
+
+    def update(self, *rows_data: RowData) -> Self:
+        """TODO"""
+
+        if not rows_data:
+            return self  # noop
+
+        data: DBData = [*self.read()]
+        ids = self._get_ids(data)
+
+        if not all(row["id"] in ids for row in rows_data):
+            raise TableHandlerError("Some data is invalid or cannot be found.")
+
+        indexing = self._get_indexing(data)
+
+        for updated_row in rows_data:
+            idx = indexing[updated_row["id"]]
+            data[idx] = updated_row
+
+        new_db_data = sorted([self._unparse(row) for row in data], key=self._sorter)
 
         self._json_handler.write(new_db_data)
         self._cache = None
