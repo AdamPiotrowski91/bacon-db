@@ -5,7 +5,8 @@ from typing import Any, Self
 
 # region Helpers
 
-type DBData = list[dict[str, Any]]
+type RowData = dict[str, Any]
+type DBData = list[RowData]
 
 
 # TODO: consider that returned data is still a reference to cache and changes in-place may affect it

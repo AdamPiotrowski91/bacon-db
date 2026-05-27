@@ -1,4 +1,5 @@
 import inspect as ins
+import uuid
 
 
 # TODO: when used, does not account for methods without args
@@ -20,3 +21,9 @@ def count_required_args(fn):
             required += 1
 
     return required
+
+
+def unique_id() -> str:
+    """Get unique ID (based on `uuid4`)"""
+
+    return str(uuid.uuid4())

@@ -1,10 +1,11 @@
 import pathlib as p
 import threading as th
 from dataclasses import dataclass
+from typing import Any, Callable, Self
 
 from .. import json as j
-from ..json import DBData  # explicitly imported type
-from ..utils import count_required_args
+from ..json import DBData, RowData  # explicitly imported types
+from ..utils import count_required_args, unique_id
 
 # region Helpers
 
@@ -82,6 +83,10 @@ class TableHandler:
             self._cache_raw = value
             return self._cache_raw
 
+    @property
+    def _sorter(self) -> Callable[[RowData], tuple[Any, ...]]:
+        return lambda row: tuple(row[key] for key in self._sort_keys)
+
     def _setup(self) -> None:
         self._lock_cache = th.Lock()
         self._json_handler = j.JSONHandler(self._path)
@@ -131,6 +136,37 @@ class TableHandler:
                 f"Could not parse data for table '{self._path}'"
             ) from err
 
+    def _unparse(self, row_data: RowData) -> RowData:
+        """Unparses data without touching the original data and returns unparsed.
+
+        Arguments:
+            `data` (`RowData`): parsed data for a table row. Will be validated
+                before approval into database.
+
+        Returns:
+            Unparsed `DBdata`.
+
+        Raises:
+            `TableHandlerError` if the data is invalid or something unexpected happens.
+        """
+
+        # validate
+        try:
+            for col_name, col_val in row_data.items():
+                assert isinstance(col_val, self._columns[col_name])
+        except Exception as err:
+            raise TableHandlerError("Could not validate `row_data`.") from err
+
+        ret: RowData = {}
+
+        try:
+            for col_name, col_val in row_data.items():
+                ret[col_name] = str(col_val)
+        except Exception as err:
+            raise TableHandlerError("Could not unparse `row_data`.") from err
+
+        return ret
+
     def read(self) -> DBData:
         """TODO"""
 
@@ -140,10 +176,27 @@ class TableHandler:
             self._create_file_if_needed()
             ret = self._json_handler.read()
             self._parse(ret)
-            ret.sort(key=lambda row: tuple(row[key] for key in self._sort_keys))
+            ret.sort(key=self._sorter)
             self._cache = ret
 
         return ret
+
+    def insert(self, *rows_data: RowData) -> Self:
+        """TODO"""
+
+        if not rows_data:
+            return self  # noop
+
+        new_db_data: DBData = sorted(
+            [self._unparse({**row, "id": unique_id()}) for row in rows_data]
+            + [self._unparse(row) for row in self.read()],
+            key=self._sorter,
+        )
+
+        self._json_handler.write(new_db_data)
+        self._cache = None
+
+        return self
 
 
 # endregion
