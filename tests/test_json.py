@@ -1,5 +1,4 @@
 import contextlib
-import json
 import pathlib as p
 import threading as th
 
@@ -10,27 +9,6 @@ import bacon_db.json as j
 
 
 class TestJSONHandler:
-    # region Setup
-
-    @pytest.fixture(scope="class")
-    def temp_file_generator(self, temp_folder_path):
-
-        @contextlib.contextmanager
-        def __fn(data: j.DBData):
-            path: p.Path = temp_folder_path / "_temp_.json"
-            assert isinstance(path, p.Path)
-
-            with open(path, "w") as f:
-                json.dump(data, f)
-
-            yield path
-
-            path.unlink()
-
-        return __fn
-
-    # endregion
-
     # region Reading
 
     def test_read_nonexistent(self, temp_folder_path):

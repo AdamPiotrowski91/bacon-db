@@ -174,7 +174,7 @@ class TableHandler:
     def _get_indexing(self, data: DBData) -> dict[str, int]:
         return {row["id"]: i for i, row in enumerate(data)}
 
-    def read(self) -> DBData:
+    def get_rows(self) -> DBData:
         """TODO"""
 
         ret = self._cache
@@ -188,16 +188,16 @@ class TableHandler:
 
         return ret
 
-    def insert(self, *rows_data: RowData) -> Self:
+    def insert_rows(self, *rows_data: RowData) -> Self:
         """TODO"""
 
         if not rows_data:
             return self  # noop
 
-        # TODO: consider if sorting should be done by unparsed data
+        # TODO: consider if sorting should be done by unparsed data (apply everywhere)
         new_db_data: DBData = sorted(
             [self._unparse({**row, "id": unique_id()}) for row in rows_data]
-            + [self._unparse(row) for row in self.read()],
+            + [self._unparse(row) for row in self.get_rows()],
             key=self._sorter,
         )
 
@@ -206,13 +206,13 @@ class TableHandler:
 
         return self
 
-    def update(self, *rows_data: RowData) -> Self:
+    def update_rows(self, *rows_data: RowData) -> Self:
         """TODO"""
 
         if not rows_data:
             return self  # noop
 
-        data: DBData = [*self.read()]
+        data: DBData = [*self.get_rows()]
         ids = self._get_ids(data)
 
         if not all(row["id"] in ids for row in rows_data):
@@ -227,6 +227,34 @@ class TableHandler:
         new_db_data = sorted([self._unparse(row) for row in data], key=self._sorter)
 
         self._json_handler.write(new_db_data)
+        self._cache = None
+
+        return self
+
+    def delete_rows(self, *identifiers: str | RowData) -> Self:
+        """TODO"""
+
+        if not identifiers:
+            return self  # noop
+
+        data = [*self.get_rows()]
+        ids = self._get_ids(data)
+        indexing = self._get_indexing(data)
+        removals = set()
+
+        try:
+            for ident in identifiers:
+                ident_str = ident if isinstance(ident, str) else ident["id"]
+
+                if ident_str in ids:
+                    removals.add(indexing[ident_str])
+
+        except Exception as err:
+            raise TableHandlerError("Could not identify some of the records.") from err
+
+        data = [self._unparse(row) for i, row in enumerate(data) if i not in removals]
+
+        self._json_handler.write(data)
         self._cache = None
 
         return self
