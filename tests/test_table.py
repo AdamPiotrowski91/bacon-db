@@ -1,3 +1,4 @@
+import contextlib
 import json
 import pathlib as p
 
@@ -116,6 +117,85 @@ class TestTableHandler:
     # endregion
 
     # region Insert Rows
+
+    def test_table_insert_can_without_setup(
+        self, temp_folder_path: p.Path, mocked_unique_id_get_all
+    ):
+        path = temp_folder_path / "db.json"
+
+        try:
+            assert not path.exists()
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            # did not raise
+            handler.insert_rows({"col1": 69, "col2": "wow"})
+            ids = mocked_unique_id_get_all()
+
+            assert handler.get_rows() == [{"col1": 69, "col2": "wow", "id": ids[-1]}]
+        finally:
+            self.finally_cleanup(path)
+
+    @pytest.mark.parametrize(
+        "new_data",
+        [
+            [],
+            [{"col1": 69, "col2": "wow"}],
+            [{"col1": 69, "col2": "wow"}, {"col1": 80, "col2": "extra"}],
+            [{"col1": 69, "col2": "wow"}, {"col1": 69, "col2": "wow"}],  # allows dups
+        ],
+    )
+    def test_table_insert_valid(
+        self, temp_file_generator, mocked_unique_id_get_all, new_data
+    ):
+        with temp_file_generator(
+            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+        ) as path:
+            assert isinstance(path, p.Path)
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            data = handler.get_rows()
+
+            handler.insert_rows(*new_data)
+
+            ids = mocked_unique_id_get_all()
+            new_data = [
+                {**row, "id": id} for id, row in zip(ids, new_data, strict=True)
+            ]
+
+            final_data = handler.get_rows()
+
+            # old data does not contain new rows
+            assert all(
+                all(row != old_row for row in new_data) for old_row in data
+            ), f"{data=} | {new_data=}"
+            # final data contain new rows exactly once each
+            assert all(
+                len([row for row in final_data if row == new_row]) == 1
+                for new_row in new_data
+            ), f"{final_data=} | {new_data=}"
+
+    @pytest.mark.parametrize(
+        "new_data",
+        [
+            [{"col1": "invalid type", "col2": "wow"}],
+            [{"col1": 69}],  # not all cols
+            [{"col1": "invalid type", "col2": "wow", "col3": "wut?"}],  # too much cols
+            [{"col1": 70}, {"col1": 69, "col2": "wow"}],  # one valid
+            [{"col1": 69, "col2": "wow"}, {"col1": 70}],  # one valid (reordered)
+        ],
+    )
+    def test_table_insert_invalid(self, temp_file_generator, new_data):
+        with temp_file_generator(
+            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+        ) as path:
+            assert isinstance(path, p.Path)
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            # does not raise
+            handler.get_rows()
+
+            with contextlib.suppress(t.TableHandlerError):
+                handler.insert_rows(*new_data)
 
     # endregion
 

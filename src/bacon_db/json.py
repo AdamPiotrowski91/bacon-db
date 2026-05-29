@@ -11,7 +11,8 @@ type DBData = list[RowData]
 
 # TODO: consider that returned data is still a reference to cache and changes in-place may affect it
 # TODO: potential race condition between checking for file existence and actually applying lock
-# TODO: implement opt-in backup mechanics
+# TODO: implement opt-in backup mechanics for on-change
+# TODO: handle multiple handlers for a single path (apply to higher classes as well)
 
 
 class JSONHandlerError(RuntimeError):
