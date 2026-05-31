@@ -281,6 +281,23 @@ class TestTableHandler:
             with pytest.raises(t.TableHandlerError):
                 handler.update_rows(*new_data)
 
+    def test_table_update_invalid_aba(self, temp_file_generator):
+        with temp_file_generator(
+            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+        ) as path:
+            assert isinstance(path, p.Path)
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            old_data = handler.get_rows()
+
+            with pytest.raises(t.TableHandlerError):
+                handler.update_rows(
+                    {**create_row_template(1), "col1": 69}, {"id": "invalid"}
+                )
+
+            new_data = handler.get_rows()
+            assert old_data == new_data
+
     # endregion
 
     # region Delete Rows

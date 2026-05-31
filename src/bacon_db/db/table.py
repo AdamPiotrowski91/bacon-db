@@ -268,6 +268,9 @@ class TableHandler:
                 needs to be a valid id which already exists in the table.
                 Nonexistent ids will be ignored without error.
 
+        Note:
+            If `identifiers` entry is a row data, this method just extracts ID and removes the record without validating if the actual row data provided matches.
+
         Returns:
             `self` for chaining.
 
