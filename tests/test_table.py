@@ -302,4 +302,68 @@ class TestTableHandler:
 
     # region Delete Rows
 
+    @pytest.mark.parametrize(
+        "delete_data",
+        [
+            [],
+            [create_row_template(1)["id"]],
+            [create_row_template(1)],
+            [create_row_template(1)["id"], create_row_template(2)["id"]],
+            [create_row_template(1), create_row_template(2)],
+            [create_row_template(1)["id"], create_row_template(2)],
+            [create_row_template(1), create_row_template(2), create_row_template(3)],
+        ],
+    )
+    def test_table_delete_valid(self, temp_file_generator, delete_data):
+        with temp_file_generator(
+            DEFAULT_DATA + [create_row_template(3)], lambda: self.finally_cleanup(path)
+        ) as path:
+            assert isinstance(path, p.Path)
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            handler.delete_rows(*delete_data)
+
+            final_data = handler.get_rows()
+            final_ids = handler._get_ids(final_data)
+            ids = [
+                row if isinstance(row, str) else row.get("id") for row in delete_data
+            ]
+
+            assert all(id not in final_ids for id in ids)
+
+    @pytest.mark.parametrize(
+        "delete_data",
+        [
+            [{}],
+        ],
+    )
+    def test_table_delete_invalid(self, temp_file_generator, delete_data):
+        with temp_file_generator(
+            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+        ) as path:
+            assert isinstance(path, p.Path)
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            # did not raise
+            handler.get_rows()
+
+            with pytest.raises(t.TableHandlerError):
+                handler.delete_rows(*delete_data)
+
+    def test_table_delete_invalid_aba(self, temp_file_generator):
+        with temp_file_generator(
+            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+        ) as path:
+            assert isinstance(path, p.Path)
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            old_data = handler.get_rows()
+
+            with pytest.raises(t.TableHandlerError):
+                handler.delete_rows({})
+
+            final_data = handler.get_rows()
+
+            assert old_data == final_data
+
     # endregion
