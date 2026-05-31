@@ -201,6 +201,86 @@ class TestTableHandler:
 
     # region Update Rows
 
+    @pytest.mark.parametrize(
+        "new_data",
+        [
+            [],
+            [{"id": create_row_template(1)["id"], "col1": 50, "col2": "nope"}],  # full
+            [{"id": create_row_template(1)["id"], "col1": 50}],  # partial
+            [
+                {"id": create_row_template(1)["id"], "col1": 50, "col2": "nope"},
+                {"id": create_row_template(2)["id"], "col1": 100, "col2": "yay"},
+            ],  # full, all
+            [
+                {"id": create_row_template(1)["id"], "col1": 50},
+                {"id": create_row_template(2)["id"], "col1": 100},
+            ],  # partial, all
+            [
+                {"id": create_row_template(1)["id"], "col1": 50, "col2": "nope"},
+                {"id": create_row_template(2)["id"], "col1": 100},
+            ],  # mixed
+        ],
+    )
+    def test_table_update_valid(self, temp_file_generator, new_data):
+        with temp_file_generator(
+            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+        ) as path:
+            assert isinstance(path, p.Path)
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            old_data = handler.get_rows()
+            all_ids = handler._get_ids(old_data)
+
+            handler.update_rows(*new_data)
+
+            ids = handler._get_ids(new_data)
+            assert all(id in all_ids for id in ids)
+
+            for updates in new_data:
+                indexing = handler._get_indexing(old_data)
+                idx = indexing[updates["id"]]
+                record = old_data[idx]
+                assert all(
+                    g := (
+                        record.get(key) != val
+                        for key, val in updates.items()
+                        if key != "id"
+                    )
+                ), f"{list(g)=} | {updates=} | {old_data=} | {record=}"
+
+            final_data = handler.get_rows()
+            for updates in new_data:
+                indexing = handler._get_indexing(final_data)
+                idx = indexing[updates["id"]]
+                record = final_data[idx]
+                assert all(
+                    g := (record[key] == val for key, val in updates.items())
+                ), f"{list(g)=} | {updates=} | {final_data=} | {record=}"
+
+    @pytest.mark.parametrize(
+        "new_data",
+        [
+            [{"id": "not found", "col1": 69, "col2": "nothing"}],
+            [
+                {"id": create_row_template(1)["id"], "col1": 50, "col2": "nope"},
+                {"id": "not found", "col1": 69, "col2": "nothing"},
+            ],
+            [{}],
+        ],
+    )
+    def test_table_update_invalid(self, temp_file_generator, new_data):
+        with temp_file_generator(
+            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+        ) as path:
+            assert isinstance(path, p.Path)
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            # did not raise
+            handler.get_rows()
+
+            with pytest.raises(t.TableHandlerError):
+                handler.update_rows(*new_data)
+
     # endregion
 
     # region Delete Rows

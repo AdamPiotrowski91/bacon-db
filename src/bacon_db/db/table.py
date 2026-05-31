@@ -175,7 +175,10 @@ class TableHandler:
         return {row["id"]: i for i, row in enumerate(data)}
 
     def get_rows(self) -> DBData:
-        """TODO"""
+        """Get all table data rows.
+
+        Creates the empty database file if it does not exist.
+        """
 
         ret = self._cache
 
@@ -189,7 +192,17 @@ class TableHandler:
         return ret
 
     def insert_rows(self, *rows_data: RowData) -> Self:
-        """TODO"""
+        """Inserts new data rows into database.
+
+        Keeps database sorted. If no records are provided, noop's.
+
+        Arguments:
+            `*rows_data` (`*RowData`): Valid table data rows to insert. Will
+                have dedicated unique ID generated for each entry
+
+        Returns:
+            `self` for chaining.
+        """
 
         if not rows_data:
             return self  # noop
@@ -207,7 +220,20 @@ class TableHandler:
         return self
 
     def update_rows(self, *rows_data: RowData) -> Self:
-        """TODO"""
+        """Updates existing data rows in the database.
+
+        Keeps database sorted. If no records are provided, noop's.
+
+        Arguments:
+            `*rows_data` (`*RowData`): Valid table data rows to update. Every row
+                requires `id` key which already exists in the table.
+
+        Returns:
+            `self` for chaining.
+
+        Raises:
+            `TableHandlerError` on invalid data.
+        """
 
         if not rows_data:
             return self  # noop
@@ -215,14 +241,14 @@ class TableHandler:
         data: DBData = [*self.get_rows()]
         ids = self._get_ids(data)
 
-        if not all(row["id"] in ids for row in rows_data):
+        if not all((id := row.get("id")) and id in ids for row in rows_data):
             raise TableHandlerError("Some data is invalid or cannot be found.")
 
         indexing = self._get_indexing(data)
 
         for updated_row in rows_data:
             idx = indexing[updated_row["id"]]
-            data[idx] = updated_row
+            data[idx] = {**data[idx], **updated_row}
 
         new_db_data = sorted([self._unparse(row) for row in data], key=self._sorter)
 
@@ -232,7 +258,21 @@ class TableHandler:
         return self
 
     def delete_rows(self, *identifiers: str | RowData) -> Self:
-        """TODO"""
+        """Deletes data rows from the database.
+
+        Keeps database sorted. If no records are provided, noop's.
+
+        Arguments:
+            `*identifiers` (`*RowData | str`): Valid table data rows or ids of
+                existing data rows to delete. Every row requires `id` key or
+                needs to be a valid id which already exists in the table.
+                Nonexistent ids will be ignored without error.
+
+        Returns:
+            `self` for chaining.
+
+        Raises:
+            `TableHandlerError` on invalid data."""
 
         if not identifiers:
             return self  # noop
