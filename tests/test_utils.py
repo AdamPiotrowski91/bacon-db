@@ -28,6 +28,6 @@ class TestUtils:
         vals = [u.unique_id() for _ in range(100_000)]
 
         assert all(isinstance(v, str) for v in vals)
-        assert len(vals) == len(set(vals))
+        assert len(vals) == len(set(vals)) == 100_000
 
     # endregion
