@@ -24,8 +24,6 @@ def finally_cleanup(path: p.Path) -> None:
     t.get_backup_path_from_path(path).unlink(missing_ok=True)
 
 
-# endregion
-
 class TestTableHandler:
 
     # region Init
@@ -70,8 +68,6 @@ class TestTableHandler:
         finally:
             path.rmdir()
 
-    # endregion
-
     # region Get Rows
 
     @pytest.mark.parametrize(
@@ -115,7 +111,14 @@ class TestTableHandler:
                 handler = t.TableHandler(path, cols, sorts)
                 handler.get_rows()
 
-    # endregion
+    def test_table_get_single_row(self, temp_file_generator):
+        with temp_file_generator(DEFAULT_DATA, lambda: finally_cleanup(path)) as path:
+            assert isinstance(path, p.Path)
+
+            handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+
+            data = create_row_template(2)
+            assert handler.get_single_row(data["id"]) == data
 
     # region Insert Rows
 
@@ -148,9 +151,7 @@ class TestTableHandler:
     def test_table_insert_valid(
         self, temp_file_generator, mocked_unique_id_get_all, new_data
     ):
-        with temp_file_generator(
-            DEFAULT_DATA, lambda: finally_cleanup(path)
-        ) as path:
+        with temp_file_generator(DEFAULT_DATA, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
             handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
@@ -186,9 +187,7 @@ class TestTableHandler:
         ],
     )
     def test_table_insert_invalid(self, temp_file_generator, new_data):
-        with temp_file_generator(
-            DEFAULT_DATA, lambda: finally_cleanup(path)
-        ) as path:
+        with temp_file_generator(DEFAULT_DATA, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
             handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
@@ -197,8 +196,6 @@ class TestTableHandler:
 
             with contextlib.suppress(t.TableHandlerError):
                 handler.insert_rows(*new_data)
-
-    # endregion
 
     # region Update Rows
 
@@ -223,9 +220,7 @@ class TestTableHandler:
         ],
     )
     def test_table_update_valid(self, temp_file_generator, new_data):
-        with temp_file_generator(
-            DEFAULT_DATA, lambda: finally_cleanup(path)
-        ) as path:
+        with temp_file_generator(DEFAULT_DATA, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
             handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
@@ -270,9 +265,7 @@ class TestTableHandler:
         ],
     )
     def test_table_update_invalid(self, temp_file_generator, new_data):
-        with temp_file_generator(
-            DEFAULT_DATA, lambda: finally_cleanup(path)
-        ) as path:
+        with temp_file_generator(DEFAULT_DATA, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
             handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
@@ -283,9 +276,7 @@ class TestTableHandler:
                 handler.update_rows(*new_data)
 
     def test_table_update_invalid_aba(self, temp_file_generator):
-        with temp_file_generator(
-            DEFAULT_DATA, lambda: finally_cleanup(path)
-        ) as path:
+        with temp_file_generator(DEFAULT_DATA, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
             handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
@@ -298,8 +289,6 @@ class TestTableHandler:
 
             new_data = handler.get_rows()
             assert old_data == new_data
-
-    # endregion
 
     # region Delete Rows
 
@@ -339,9 +328,7 @@ class TestTableHandler:
         ],
     )
     def test_table_delete_invalid(self, temp_file_generator, delete_data):
-        with temp_file_generator(
-            DEFAULT_DATA, lambda: finally_cleanup(path)
-        ) as path:
+        with temp_file_generator(DEFAULT_DATA, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
             handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
@@ -352,9 +339,7 @@ class TestTableHandler:
                 handler.delete_rows(*delete_data)
 
     def test_table_delete_invalid_aba(self, temp_file_generator):
-        with temp_file_generator(
-            DEFAULT_DATA, lambda: finally_cleanup(path)
-        ) as path:
+        with temp_file_generator(DEFAULT_DATA, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
             handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
@@ -366,5 +351,3 @@ class TestTableHandler:
             final_data = handler.get_rows()
 
             assert old_data == final_data
-
-    # endregion

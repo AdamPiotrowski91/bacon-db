@@ -19,8 +19,6 @@ class JSONHandlerError(RuntimeError):
     """Error Raised by `JSONHandler` class during runtime."""
 
 
-# endregion
-
 # region Implementation
 
 
@@ -140,6 +138,3 @@ class JSONHandler:
             self._cache = new_data
 
         return self
-
-
-# endregion

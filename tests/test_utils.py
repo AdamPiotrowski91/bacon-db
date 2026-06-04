@@ -20,8 +20,6 @@ class TestUtils:
     def test_count_required_args(self, fn, expected_count):
         assert u.count_required_args(fn) == expected_count
 
-    # endregion
-
     # region `unique_id`
 
     def test_unique_id(self):
@@ -29,5 +27,3 @@ class TestUtils:
 
         assert all(isinstance(v, str) for v in vals)
         assert len(vals) == len(set(vals)) == 100_000
-
-    # endregion

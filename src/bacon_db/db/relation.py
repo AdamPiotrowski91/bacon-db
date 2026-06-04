@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Any
 
-
 if TYPE_CHECKING:
     from .table import TableHandler, DBRowData
 
@@ -29,8 +28,6 @@ class _RelationRowData(dict):
         return self["id"]
 
 
-# endregion
-
 # region Implementation
 
 
@@ -45,5 +42,3 @@ class RelationHandler:
         """TODO"""
 
         return _RelationRowData(self._table.get_single_row(row_id))
-
-# endregion

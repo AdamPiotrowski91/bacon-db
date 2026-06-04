@@ -8,7 +8,6 @@ from ..json import DBData, DBRowData  # explicitly imported types
 from ..utils import count_required_args, unique_id
 from .relation import RelationHandler
 
-
 # region Helpers
 
 
@@ -33,8 +32,6 @@ class TableConfig:
 class TableHandlerError(RuntimeError):
     """Error Raised by `DatabaseHandler` class during runtime."""
 
-
-# endregion
 
 # region Implementation
 
@@ -318,12 +315,11 @@ class TableHandler:
         except Exception as err:
             raise TableHandlerError("Could not identify some of the records.") from err
 
-        data = [self._unparse_row(row) for i, row in enumerate(data) if i not in removals]
+        data = [
+            self._unparse_row(row) for i, row in enumerate(data) if i not in removals
+        ]
 
         self._json_handler.write(data)
         self._cache = None
 
         return self
-
-
-# endregion

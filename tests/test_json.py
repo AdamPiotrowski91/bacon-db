@@ -37,8 +37,6 @@ class TestJSONHandler:
 
     # TODO: test for hitting cache
 
-    # endregion
-
     # region Creating
 
     def test_create_existent(self, temp_file_generator):
@@ -62,8 +60,6 @@ class TestJSONHandler:
             assert handler.read() == []
         finally:
             path.unlink(missing_ok=True)
-
-    # endregion
 
     # region Writing
 
@@ -103,8 +99,6 @@ class TestJSONHandler:
                 handler.write(data)
         finally:
             path.unlink(missing_ok=True)
-
-    # endregion
 
     # region QoL
 
@@ -180,8 +174,6 @@ class TestJSONHandler:
         finally:
             path.unlink(missing_ok=True)
 
-    # endregion
-
     # region Async
 
     @classmethod
@@ -246,5 +238,3 @@ class TestJSONHandler:
             handler.read()  # set cache
 
             self.assert_async_action(handler, "_lock_cache", [{"col": 1}])
-
-    # endregion

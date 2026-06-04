@@ -28,8 +28,12 @@ def temp_folder_path():
 def temp_file_generator(temp_folder_path):
 
     @contextlib.contextmanager
-    def __fn(data: j.DBData, cleanup: Callable[[], None] | None = None):
-        path: p.Path = temp_folder_path / "_temp_.json"
+    def __fn(
+        data: j.DBData,
+        cleanup: Callable[[], None] | None = None,
+        file_name: str = "_temp_.json",
+    ):
+        path: p.Path = temp_folder_path / file_name
         assert isinstance(path, p.Path)
 
         with open(path, "w") as f:
