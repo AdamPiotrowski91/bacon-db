@@ -5,8 +5,8 @@ from typing import Any, Self
 
 # region Helpers
 
-type RowData = dict[str, Any]
-type DBData = list[RowData]
+type DBRowData = dict[str, Any]
+type DBData = list[DBRowData]
 
 
 # TODO: consider that returned data is still a reference to cache and changes in-place may affect it
@@ -25,7 +25,15 @@ class JSONHandlerError(RuntimeError):
 
 
 class JSONHandler:
+    """Handler to manipulate JSON file directly on a disk."""
+
     def __init__(self, path: p.Path | str) -> None:
+        """
+        Arguments:
+            `path` (`Path | str`): disk path where the file should be kept.
+                Can be absolute or relative to this module.
+        """
+
         self._path = p.Path(path).resolve().absolute()
         self._cache_raw: DBData | None = None
 
@@ -49,6 +57,7 @@ class JSONHandler:
         assert isinstance(c := data, list) and all(isinstance(elem, dict) for elem in c)
 
     def exists(self) -> bool:
+        """Check whether the file exists."""
         return self._path.exists()
 
     def read(self) -> DBData:

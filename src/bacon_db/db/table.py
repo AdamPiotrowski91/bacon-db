@@ -4,13 +4,15 @@ from dataclasses import dataclass
 from typing import Any, Callable, Self
 
 from .. import json as j
-from ..json import DBData, RowData  # explicitly imported types
+from ..json import DBData, DBRowData  # explicitly imported types
 from ..utils import count_required_args, unique_id
+from .relation import RelationHandler
+
 
 # region Helpers
 
 
-type TableColumnsSetup = dict[str, type]
+type TableColumnsSetup = dict[str, type | RelationHandler]
 
 BACKUP_PREFIX = "_backup_"
 
@@ -84,7 +86,7 @@ class TableHandler:
             return self._cache_raw
 
     @property
-    def _sorter(self) -> Callable[[RowData], tuple[Any, ...]]:
+    def _sorter(self) -> Callable[[DBRowData], tuple[Any, ...]]:
         return lambda row: tuple(row[key] for key in self._sort_keys)
 
     def _setup(self) -> None:
@@ -106,7 +108,7 @@ class TableHandler:
             for col_name, col_type in self._columns.items():
                 assert isinstance(col_name, str) and col_name
                 try:
-                    ii = isinstance(col_type, type)
+                    ii = isinstance(col_type, (type, RelationHandler))
                     c = callable(col_type)
                     s = count_required_args(col_type) <= 1
 
@@ -124,8 +126,15 @@ class TableHandler:
         if not self._path.exists():
             self._json_handler.create()
 
-    def _parse(self, data: DBData) -> None:
-        """Parses json data in-place."""
+    def _parse_all(self, data: DBData) -> None:
+        """Parses json data in-place.
+
+        Arguments:
+            `data` (`DBData`): raw database data to parse.
+
+        Raises:
+            `TableHandlerError` if the data is invalid or something unexpected happens.
+        """
 
         try:
             for entry in data:
@@ -136,11 +145,11 @@ class TableHandler:
                 f"Could not parse data for table '{self._path}'"
             ) from err
 
-    def _unparse(self, row_data: RowData) -> RowData:
+    def _unparse_row(self, row_data: DBRowData) -> DBRowData:
         """Unparses data without touching the original data and returns unparsed.
 
         Arguments:
-            `data` (`RowData`): parsed data for a table row. Will be validated
+            `data` (`DBRowData`): parsed data for a table row. Will be validated
                 before approval into database.
 
         Returns:
@@ -153,11 +162,16 @@ class TableHandler:
         # validate
         try:
             for col_name, col_val in row_data.items():
-                assert isinstance(col_val, self._columns[col_name])
+                tp = self._columns[col_name]
+                if isinstance(tp, RelationHandler):
+                    assert isinstance(col_val, str)  # row ID
+                    row_data[col_name] = tp(col_val)
+                else:
+                    assert isinstance(col_val, tp)
         except Exception as err:
             raise TableHandlerError("Could not validate `row_data`.") from err
 
-        ret: RowData = {}
+        ret: DBRowData = {}
 
         # unparse
         try:
@@ -174,6 +188,15 @@ class TableHandler:
     def _get_indexing(self, data: DBData) -> dict[str, int]:
         return {row["id"]: i for i, row in enumerate(data)}
 
+    def get_single_row(self, row_id: str) -> Any:
+        """TODO"""
+
+        for entry in self.get_rows():
+            if entry["id"] == row_id:
+                return entry
+
+        raise TableHandlerError(f"Row with id '{row_id}' does not exist.")
+
     def get_rows(self) -> DBData:
         """Get all table data rows.
 
@@ -185,19 +208,19 @@ class TableHandler:
         if ret is None:
             self._create_file_if_needed()
             ret = self._json_handler.read()
-            self._parse(ret)
+            self._parse_all(ret)
             ret.sort(key=self._sorter)
             self._cache = ret
 
         return ret
 
-    def insert_rows(self, *rows_data: RowData) -> Self:
+    def insert_rows(self, *rows_data: DBRowData) -> Self:
         """Inserts new data rows into database.
 
         Keeps database sorted. If no records are provided, noop's.
 
         Arguments:
-            `*rows_data` (`*RowData`): Valid table data rows to insert. Will
+            `*rows_data` (`*DBRowData`): Valid table data rows to insert. Will
                 have dedicated unique ID generated for each entry
 
         Returns:
@@ -209,8 +232,8 @@ class TableHandler:
 
         # TODO: consider if sorting should be done by unparsed data (apply everywhere)
         new_db_data: DBData = sorted(
-            [self._unparse({**row, "id": unique_id()}) for row in rows_data]
-            + [self._unparse(row) for row in self.get_rows()],
+            [self._unparse_row({**row, "id": unique_id()}) for row in rows_data]
+            + [self._unparse_row(row) for row in self.get_rows()],
             key=self._sorter,
         )
 
@@ -219,13 +242,13 @@ class TableHandler:
 
         return self
 
-    def update_rows(self, *rows_data: RowData) -> Self:
+    def update_rows(self, *rows_data: DBRowData) -> Self:
         """Updates existing data rows in the database.
 
         Keeps database sorted. If no records are provided, noop's.
 
         Arguments:
-            `*rows_data` (`*RowData`): Valid table data rows to update. Every row
+            `*rows_data` (`*DBRowData`): Valid table data rows to update. Every row
                 requires `id` key which already exists in the table.
 
         Returns:
@@ -250,20 +273,20 @@ class TableHandler:
             idx = indexing[updated_row["id"]]
             data[idx] = {**data[idx], **updated_row}
 
-        new_db_data = sorted([self._unparse(row) for row in data], key=self._sorter)
+        new_db_data = sorted([self._unparse_row(row) for row in data], key=self._sorter)
 
         self._json_handler.write(new_db_data)
         self._cache = None
 
         return self
 
-    def delete_rows(self, *identifiers: str | RowData) -> Self:
+    def delete_rows(self, *identifiers: str | DBRowData) -> Self:
         """Deletes data rows from the database.
 
         Keeps database sorted. If no records are provided, noop's.
 
         Arguments:
-            `*identifiers` (`*RowData | str`): Valid table data rows or ids of
+            `*identifiers` (`*DBRowData | str`): Valid table data rows or ids of
                 existing data rows to delete. Every row requires `id` key or
                 needs to be a valid id which already exists in the table.
                 Nonexistent ids will be ignored without error.
@@ -295,7 +318,7 @@ class TableHandler:
         except Exception as err:
             raise TableHandlerError("Could not identify some of the records.") from err
 
-        data = [self._unparse(row) for i, row in enumerate(data) if i not in removals]
+        data = [self._unparse_row(row) for i, row in enumerate(data) if i not in removals]
 
         self._json_handler.write(data)
         self._cache = None

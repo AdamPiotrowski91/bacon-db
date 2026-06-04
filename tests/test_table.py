@@ -6,26 +6,27 @@ import pytest
 
 from bacon_db.db import table as t
 
+# region Setup
+
 DEFAULT_COLS = {"col1": int, "col2": str}
 DEFAULT_SORT_KEY = tuple(DEFAULT_COLS.keys())[0]
 
 
-def create_row_template(i: int) -> t.RowData:
+def create_row_template(i: int) -> t.DBRowData:
     return {"col1": i * 10, "col2": f"test_{i}", "id": str(i)}
 
 
 DEFAULT_DATA = [create_row_template(1), create_row_template(2)]
 
 
+def finally_cleanup(path: p.Path) -> None:
+    path.unlink(missing_ok=True)
+    t.get_backup_path_from_path(path).unlink(missing_ok=True)
+
+
+# endregion
+
 class TestTableHandler:
-    # region Setup
-
-    @classmethod
-    def finally_cleanup(cls, path: p.Path) -> None:
-        path.unlink(missing_ok=True)
-        t.get_backup_path_from_path(path).unlink(missing_ok=True)
-
-    # endregion
 
     # region Init
 
@@ -54,7 +55,7 @@ class TestTableHandler:
             # does not raise
             t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
         finally:
-            self.finally_cleanup(path)
+            finally_cleanup(path)
 
     def test_init_invalid(self, temp_folder_path: p.Path):
         path = temp_folder_path / "folder"
@@ -86,7 +87,7 @@ class TestTableHandler:
         ],
     )
     def test_table_get_valid(self, temp_file_generator, data, cols, sorts):
-        with temp_file_generator(data, lambda: self.finally_cleanup(path)) as path:
+        with temp_file_generator(data, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
             handler = t.TableHandler(path, cols, sorts)
@@ -107,7 +108,7 @@ class TestTableHandler:
         ],
     )
     def test_table_get_invalid(self, temp_file_generator, data, cols, sorts):
-        with temp_file_generator(data, lambda: self.finally_cleanup(path)) as path:
+        with temp_file_generator(data, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
             with pytest.raises(t.TableHandlerError):
@@ -133,7 +134,7 @@ class TestTableHandler:
 
             assert handler.get_rows() == [{"col1": 69, "col2": "wow", "id": ids[-1]}]
         finally:
-            self.finally_cleanup(path)
+            finally_cleanup(path)
 
     @pytest.mark.parametrize(
         "new_data",
@@ -148,7 +149,7 @@ class TestTableHandler:
         self, temp_file_generator, mocked_unique_id_get_all, new_data
     ):
         with temp_file_generator(
-            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+            DEFAULT_DATA, lambda: finally_cleanup(path)
         ) as path:
             assert isinstance(path, p.Path)
 
@@ -186,7 +187,7 @@ class TestTableHandler:
     )
     def test_table_insert_invalid(self, temp_file_generator, new_data):
         with temp_file_generator(
-            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+            DEFAULT_DATA, lambda: finally_cleanup(path)
         ) as path:
             assert isinstance(path, p.Path)
 
@@ -223,7 +224,7 @@ class TestTableHandler:
     )
     def test_table_update_valid(self, temp_file_generator, new_data):
         with temp_file_generator(
-            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+            DEFAULT_DATA, lambda: finally_cleanup(path)
         ) as path:
             assert isinstance(path, p.Path)
 
@@ -270,7 +271,7 @@ class TestTableHandler:
     )
     def test_table_update_invalid(self, temp_file_generator, new_data):
         with temp_file_generator(
-            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+            DEFAULT_DATA, lambda: finally_cleanup(path)
         ) as path:
             assert isinstance(path, p.Path)
 
@@ -283,7 +284,7 @@ class TestTableHandler:
 
     def test_table_update_invalid_aba(self, temp_file_generator):
         with temp_file_generator(
-            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+            DEFAULT_DATA, lambda: finally_cleanup(path)
         ) as path:
             assert isinstance(path, p.Path)
 
@@ -316,7 +317,7 @@ class TestTableHandler:
     )
     def test_table_delete_valid(self, temp_file_generator, delete_data):
         with temp_file_generator(
-            DEFAULT_DATA + [create_row_template(3)], lambda: self.finally_cleanup(path)
+            DEFAULT_DATA + [create_row_template(3)], lambda: finally_cleanup(path)
         ) as path:
             assert isinstance(path, p.Path)
 
@@ -339,7 +340,7 @@ class TestTableHandler:
     )
     def test_table_delete_invalid(self, temp_file_generator, delete_data):
         with temp_file_generator(
-            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+            DEFAULT_DATA, lambda: finally_cleanup(path)
         ) as path:
             assert isinstance(path, p.Path)
 
@@ -352,7 +353,7 @@ class TestTableHandler:
 
     def test_table_delete_invalid_aba(self, temp_file_generator):
         with temp_file_generator(
-            DEFAULT_DATA, lambda: self.finally_cleanup(path)
+            DEFAULT_DATA, lambda: finally_cleanup(path)
         ) as path:
             assert isinstance(path, p.Path)
 

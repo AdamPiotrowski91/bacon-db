@@ -3,7 +3,7 @@ import uuid
 
 
 # TODO: when used, does not account for methods without args
-def count_required_args(fn):
+def count_required_args(fn) -> int:
     """Count required arguments in a callable."""
 
     if not callable(fn):
