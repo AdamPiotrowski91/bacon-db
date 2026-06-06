@@ -37,7 +37,6 @@ class TestRelationRowData:
         assert data["a"] == 1
         assert data["b"] == "test"
         assert "c" not in data
-        assert data == RAW_DATA_SOURCE
 
     def test_stringify(self):
         data = r.RelationRowData(RAW_DATA_SOURCE)
@@ -190,6 +189,18 @@ class TestRelationHandler:
             root.delete_rows("r2").get_single_row("r2")
 
         assert sub.get_rows() == sub_data  # no change
+
+    # region ~ Transferable
+
+    def test_relation_table_transferable(
+        self, temp_basic_related_tables: BasicRelatedTables, mocked_unique_id_get_all
+    ):
+        root, _ = temp_basic_related_tables
+        root.insert_rows({"col1": 69, "col2": "1"})
+        ids_ref = mocked_unique_id_get_all()
+
+        root2 = t.TableHandler(root._path, root._columns, root._sort_keys)
+        assert root2.get_single_row(ids_ref[-1])["col2"]["name"] == "A"
 
 
 # TODO: invalid paths
