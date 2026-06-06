@@ -135,10 +135,10 @@ class TestRelationHandler:
         root, sub = temp_basic_related_tables
         sub_data = sub.get_rows()
         new_entry = {"col1": 69, "col2": "1"}
-        ids = mocked_unique_id_get_all()
+        ids_ref = mocked_unique_id_get_all()
 
         # inserted via sub ID
-        row = root.insert_rows(new_entry).get_single_row(ids[-1])
+        row = root.insert_rows(new_entry).get_single_row(ids_ref[-1])
         for k, v in new_entry.items():
             assert str(row[k]) == str(v)  # raw equals
             assert row[k] == v  # helper class handles equality
@@ -147,7 +147,7 @@ class TestRelationHandler:
         # inserted via sub Row
         row = root.insert_rows(
             {**new_entry, "col2": sub.get_single_row("1")}
-        ).get_single_row(ids[-1])
+        ).get_single_row(ids_ref[-1])
         for k, v in new_entry.items():
             assert str(row[k]) == str(v)
             assert row[k] == v
@@ -156,4 +156,40 @@ class TestRelationHandler:
 
     # region ~ Update Rows
 
+    def test_relation_table_update_valid(
+        self, temp_basic_related_tables: BasicRelatedTables
+    ):
+        root, sub = temp_basic_related_tables
+        sub_data = sub.get_rows()
+        new_entry = {"col1": 69, "col2": "1"}
+
+        row = root.get_single_row("r2")
+        for k, v in new_entry.items():
+            assert str(row[k]) != str(v)
+            assert row[k] != v
+
+        row = root.update_rows({**new_entry, "id": "r2"}).get_single_row("r2")
+        for k, v in new_entry.items():
+            assert str(row[k]) == str(v)
+            assert row[k] == v
+
+        assert sub.get_rows() == sub_data  # no change
+
     # region ~ Delete Rows
+
+    def test_relation_table_delete_valid(
+        self, temp_basic_related_tables: BasicRelatedTables
+    ):
+        root, sub = temp_basic_related_tables
+        sub_data = sub.get_rows()
+
+        row = root.get_single_row("r2")
+        assert row
+
+        with pytest.raises(t.TableHandlerError):
+            root.delete_rows("r2").get_single_row("r2")
+
+        assert sub.get_rows() == sub_data  # no change
+
+
+# TODO: invalid paths
