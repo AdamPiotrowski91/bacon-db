@@ -11,10 +11,10 @@ class RelationHandlerError(RuntimeError):
     """TODO"""
 
 
-class _RelationRowData(dict):
+class RelationRowData(dict):
     """TODO"""
 
-    def __init__(self, row_data: DBRowData) -> None:
+    def __init__(self, row_data: DBRowData | RelationRowData) -> None:
         """TODO"""
         if "id" not in row_data:
             raise RelationHandlerError(f"Row Data `{row_data}` does not have 'id' key.")
@@ -23,6 +23,12 @@ class _RelationRowData(dict):
 
         for k, v in row_data.items():
             self[k] = v
+
+    def __eq__(self, value: Any) -> bool:
+        if isinstance(value, str):
+            return self["id"] == value  # ID equals
+
+        return super().__eq__(value)
 
     def __str__(self) -> str:
         return self["id"]
@@ -38,7 +44,7 @@ class RelationHandler:
         """TODO"""
         self._table = table
 
-    def __call__(self, row_id: str) -> _RelationRowData:
+    def __call__(self, row_id: str) -> RelationRowData:
         """TODO"""
 
-        return _RelationRowData(self._table.get_single_row(row_id))
+        return RelationRowData(self._table.get_single_row(row_id))

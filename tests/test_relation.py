@@ -24,14 +24,14 @@ type BasicRelatedTables = tuple[t.TableHandler, t.TableHandler]
 
 class TestRelationRowData:
     def test_is_dict(self):
-        data = r._RelationRowData(RAW_DATA_SOURCE)
+        data = r.RelationRowData(RAW_DATA_SOURCE)
 
         assert isinstance(data, dict)
         assert set(data.keys()) == set(RAW_DATA_SOURCE.keys())
         assert set(data.values()) == set(RAW_DATA_SOURCE.values())
 
     def test_can_access_data(self):
-        data = r._RelationRowData(RAW_DATA_SOURCE)
+        data = r.RelationRowData(RAW_DATA_SOURCE)
 
         assert data["a"] == 1
         assert data["b"] == "test"
@@ -39,9 +39,34 @@ class TestRelationRowData:
         assert data == RAW_DATA_SOURCE
 
     def test_stringify(self):
-        data = r._RelationRowData(RAW_DATA_SOURCE)
+        data = r.RelationRowData(RAW_DATA_SOURCE)
 
         assert str(data) == data["id"]
+
+    def test_equality(self):
+        data = r.RelationRowData(RAW_DATA_SOURCE)
+
+        assert data == data  # NOSONAR
+        assert str(data) == str(data)
+        assert data == str(data)
+        assert str(data) == data
+        assert data == "12345"
+        assert str(data) == "12345"
+        assert data == RAW_DATA_SOURCE
+
+    def test_inequality(self):
+        data = r.RelationRowData(RAW_DATA_SOURCE)
+
+        assert data != "a"
+        assert data != "b"
+        assert data != 1
+        assert data != "test"
+        assert data is not None
+        assert str(data) != "a"
+        assert str(data) != "b"
+        assert str(data) != "1"
+        assert str(data) != "test"
+        assert data is not RAW_DATA_SOURCE  # equals but not the same ref
 
 
 # region RelationHandler
@@ -99,8 +124,34 @@ class TestRelationHandler:
         ]
 
         assert root.get_rows() == root_data_parsed
+        assert root.get_single_row("r2")["col2"]["name"] == "B"
 
     # region ~ Insert Rows
+
+    def test_relation_table_insert_valid(
+        self, temp_basic_related_tables: BasicRelatedTables, mocked_unique_id_get_all
+    ):
+        root, sub = temp_basic_related_tables
+        sub_data = sub.get_rows()
+        new_entry = {"col1": 69, "col2": "1"}
+        ids = mocked_unique_id_get_all()
+
+        # inserted via sub ID
+        row = root.insert_rows(new_entry).get_single_row(ids[-1])
+        for k, v in new_entry.items():
+            assert str(row[k]) == str(v)  # raw equals
+            assert row[k] == v  # helper class handles equality
+        assert sub.get_rows() == sub_data  # no change
+
+        # inserted via sub Row
+        row = root.insert_rows(
+            {**new_entry, "col2": sub.get_single_row("1")}
+        ).get_single_row(ids[-1])
+        for k, v in new_entry.items():
+            assert str(row[k]) == str(v)
+            assert row[k] == v
+
+        assert sub.get_rows() == sub_data  # no change
 
     # region ~ Update Rows
 

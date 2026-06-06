@@ -6,7 +6,7 @@ from typing import Any, Callable, Self
 from .. import json as j
 from ..json import DBData, DBRowData  # explicitly imported types
 from ..utils import count_required_args, unique_id
-from .relation import RelationHandler
+from .relation import RelationHandler, RelationRowData
 
 # region Helpers
 
@@ -161,8 +161,14 @@ class TableHandler:
             for col_name, col_val in row_data.items():
                 tp = self._columns[col_name]
                 if isinstance(tp, RelationHandler):
-                    assert isinstance(col_val, str)  # row ID
-                    row_data[col_name] = tp(col_val)
+                    if isinstance(col_val, str):  # row ID
+                        row_data[col_name] = tp(col_val)
+                    elif isinstance(col_val, dict):  # parsed row
+                        row_data[col_name] = RelationRowData(col_val)
+                    else:
+                        raise ValueError(
+                            f"Invalid relational column entry '{col_val}'."
+                        )
                 else:
                     assert isinstance(col_val, tp)
         except Exception as err:
