@@ -351,3 +351,25 @@ class TestTableHandler:
             final_data = handler.get_rows()
 
             assert old_data == final_data
+
+    # region Async # TODO
+
+    # region Transferable
+
+    def test_table_transferable(
+        self, temp_folder_path: p.Path, mocked_unique_id_get_all
+    ):
+        path = temp_folder_path / "aba_db.json"
+
+        try:
+            assert not path.exists()
+
+            h1 = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            assert h1.get_rows() == []
+            h1.insert_rows(r1 := create_row_template(69), r2 := create_row_template(70))
+            assert h1.get_rows() == [r1, r2]
+
+            h2 = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
+            assert h2.get_rows() == [r1, r2]
+        finally:
+            finally_cleanup(path)

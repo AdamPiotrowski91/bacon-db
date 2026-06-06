@@ -2,7 +2,8 @@ import pathlib as p
 
 import pytest
 
-from bacon_db.db import relation as r, table as t
+from bacon_db.db import relation as r
+from bacon_db.db import table as t
 
 from .test_table import finally_cleanup
 

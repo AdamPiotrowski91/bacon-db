@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .table import TableHandler, DBRowData
+    from .table import DBRowData, TableHandler
 
 
 # region Helpers

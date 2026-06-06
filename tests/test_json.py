@@ -238,3 +238,23 @@ class TestJSONHandler:
             handler.read()  # set cache
 
             self.assert_async_action(handler, "_lock_cache", [{"col": 1}])
+
+    # region Transferable
+
+    def test_transferable(self, temp_folder_path: p.Path):
+        path = temp_folder_path / "db.json"
+        data = [{"a": 1, "b": "test"}]
+
+        try:
+            h1 = j.JSONHandler(path)
+            assert not h1.exists()
+            h1.create()
+            assert h1.read() == []
+            h1.write(data)
+            assert h1.read() == data
+
+            h2 = j.JSONHandler(path)
+            assert h2.exists()
+            assert h2.read() == data
+        finally:
+            path.unlink(missing_ok=True)
