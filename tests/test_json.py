@@ -5,7 +5,7 @@ import threading as th
 import pytest
 import pytest_mock as mock
 
-import bacon_db.json as j
+import bacon_db.core.json as j
 
 
 class TestJSONHandler:

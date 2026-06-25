@@ -1,6 +1,6 @@
 import pytest
 
-from bacon_db import utils as u
+from bacon_db.core import utils as u
 
 
 class TestUtils:

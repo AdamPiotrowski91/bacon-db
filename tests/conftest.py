@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-import bacon_db.json as j
+import bacon_db.core.json as j
 
 
 @pytest.fixture(scope="session")

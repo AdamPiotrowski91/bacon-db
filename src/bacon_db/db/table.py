@@ -3,9 +3,9 @@ import threading as th
 from dataclasses import dataclass
 from typing import Any, Callable, Self
 
-from .. import json as j
-from ..json import DBData, DBRowData  # explicitly imported types
-from ..utils import count_required_args, unique_id
+from ..core import json as j
+from ..core.json import DBData, DBRowData  # explicitly imported types
+from ..core.utils import count_required_args, unique_id
 from .relation import RelationHandler, RelationHandlerError, RelationRowData
 
 # region Helpers
