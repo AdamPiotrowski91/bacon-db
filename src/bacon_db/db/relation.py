@@ -7,15 +7,25 @@ if TYPE_CHECKING:
 # region Helpers
 
 
+# TODO: consider weakref for table references
+
+
 class RelationHandlerError(RuntimeError):
-    """TODO"""
+    """Error Raised by `RelationHandler` when relationship is not set up
+    properly or cannot be applied properly.
+    """
 
 
 class RelationRowData(dict):
-    """TODO"""
+    """Helper class responsible for returning"""
 
     def __init__(self, row_data: DBRowData | RelationRowData) -> None:
-        """TODO"""
+        """
+        Arguments:
+            `row_data` (`DBRowData | RelationRowData`): Either a valid Database
+                Row or other `RelationRowData`
+        """
+
         if "id" not in row_data:
             raise RelationHandlerError(f"Row Data `{row_data}` does not have 'id' key.")
 
@@ -38,13 +48,24 @@ class RelationRowData(dict):
 
 
 class RelationHandler:
-    """TODO"""
+    """Handler representing a type of column data being a relation with another table."""
 
     def __init__(self, table: TableHandler) -> None:
-        """TODO"""
+        """
+        Arguments:
+            `table` (`TableHandler`): A reference to the Table handling data for
+                a column of IDs this relation column keeps.
+        """
+
         self._table = table
 
     def __call__(self, row_id: str) -> RelationRowData:
-        """TODO"""
+        """
+        Arguments:
+            `row_id` (`str`): ID of the row from `table`
+
+        Returns:
+            Data representing actual Table Row the relational ID was referring to.
+        """
 
         return RelationRowData(self._table.get_single_row(row_id))

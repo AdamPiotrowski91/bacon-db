@@ -6,7 +6,7 @@ from typing import Any, Callable, Self
 from .. import json as j
 from ..json import DBData, DBRowData  # explicitly imported types
 from ..utils import count_required_args, unique_id
-from .relation import RelationHandler, RelationRowData
+from .relation import RelationHandler, RelationHandlerError, RelationRowData
 
 # region Helpers
 
@@ -161,14 +161,19 @@ class TableHandler:
             for col_name, col_val in row_data.items():
                 tp = self._columns[col_name]
                 if isinstance(tp, RelationHandler):
-                    if isinstance(col_val, str):  # row ID
-                        row_data[col_name] = tp(col_val)
-                    elif isinstance(col_val, dict):  # parsed row
-                        row_data[col_name] = RelationRowData(col_val)
-                    else:
-                        raise ValueError(
-                            f"Invalid relational column entry '{col_val}'."
-                        )
+                    try:
+                        if isinstance(col_val, str):  # row ID
+                            row_data[col_name] = tp(col_val)
+                        elif isinstance(col_val, dict):  # parsed row
+                            row_data[col_name] = RelationRowData(col_val)
+                        else:
+                            raise ValueError(
+                                f"Invalid relational column entry '{col_val}'."
+                            )
+                    except Exception as err:
+                        raise RelationHandlerError(
+                            "Cannot establish valid relation."
+                        ) from err
                 else:
                     assert isinstance(col_val, tp)
         except Exception as err:
@@ -191,8 +196,14 @@ class TableHandler:
     def _get_indexing(self, data: DBData) -> dict[str, int]:
         return {row["id"]: i for i, row in enumerate(data)}
 
-    def get_single_row(self, row_id: str) -> Any:
-        """TODO"""
+    def get_single_row(self, row_id: str) -> DBRowData:
+        """
+        Arguments:
+            `row_id` (`str`): ID of a row to gather data for
+
+        Returns:
+            Row of data (`DBRowData`)
+        """
 
         for entry in self.get_rows():
             if entry["id"] == row_id:
@@ -233,7 +244,7 @@ class TableHandler:
         if not rows_data:
             return self  # noop
 
-        # TODO: consider if sorting should be done by unparsed data (apply everywhere)
+        # TODO: consider if sorting should be kept being done by unparsed data (apply everywhere)
         new_db_data: DBData = sorted(
             [self._unparse_row({**row, "id": unique_id()}) for row in rows_data]
             + [self._unparse_row(row) for row in self.get_rows()],
