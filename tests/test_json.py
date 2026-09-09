@@ -15,7 +15,7 @@ class TestJSONHandler:
         file: p.Path = temp_folder_path / "nonexistent.json"
 
         assert not file.exists()
-        with pytest.raises(j.JSONHandlerError):
+        with pytest.raises(j.JSONHandlerError):  # NOSONAR
             j.JSONHandler(file).read()
 
     def test_read_existent(self, temp_file_generator):
@@ -44,7 +44,7 @@ class TestJSONHandler:
             assert isinstance(file, p.Path)
             assert file.exists()
 
-            with pytest.raises(j.JSONHandlerError):
+            with pytest.raises(j.JSONHandlerError):  # NOSONAR
                 j.JSONHandler(file).create()
 
     def test_create_nonexistent(self, temp_folder_path: p.Path):
@@ -68,7 +68,7 @@ class TestJSONHandler:
 
         assert not path.exists()
 
-        with pytest.raises(j.JSONHandlerError):
+        with pytest.raises(j.JSONHandlerError):  # NOSONAR
             j.JSONHandler(path).write([])
 
     def test_write_existent_good_data(self, temp_folder_path: p.Path):

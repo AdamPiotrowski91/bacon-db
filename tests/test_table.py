@@ -107,7 +107,7 @@ class TestTableHandler:
         with temp_file_generator(data, lambda: finally_cleanup(path)) as path:
             assert isinstance(path, p.Path)
 
-            with pytest.raises(t.TableHandlerError):
+            with pytest.raises(t.TableHandlerError):  # NOSONAR
                 handler = t.TableHandler(path, cols, sorts)
                 handler.get_rows()
 
@@ -282,7 +282,7 @@ class TestTableHandler:
             handler = t.TableHandler(path, DEFAULT_COLS, DEFAULT_SORT_KEY)
             old_data = handler.get_rows()
 
-            with pytest.raises(t.TableHandlerError):
+            with pytest.raises(t.TableHandlerError):  # NOSONAR
                 handler.update_rows(
                     {**create_row_template(1), "col1": 69}, {"id": "invalid"}
                 )

@@ -47,7 +47,7 @@ class TestRelationRowData:
         data = r.RelationRowData(RAW_DATA_SOURCE)
 
         assert data == data  # NOSONAR
-        assert str(data) == str(data)
+        assert str(data) == str(data)  # NOSONAR
         assert data == str(data)
         assert str(data) == data
         assert data == "12345"
@@ -185,7 +185,7 @@ class TestRelationHandler:
         row = root.get_single_row("r2")
         assert row
 
-        with pytest.raises(t.TableHandlerError):
+        with pytest.raises(t.TableHandlerError):  # NOSONAR
             root.delete_rows("r2").get_single_row("r2")
 
         assert sub.get_rows() == sub_data  # no change
