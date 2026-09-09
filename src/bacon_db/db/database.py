@@ -6,17 +6,22 @@ type TablesDef = dict[str, dbt.TableHandler]
 
 
 class DatabaseError(RuntimeError):
-    """TODO"""
+    """Error Raised by `Database` when setup is incorrect and references are invalid."""
 
 
 # region Implementation
 
 
 class Database:
-    """TODO"""
+    """Helper class representing one-point-access to all relevant tables and
+    relations in a database setup."""
 
     def __init__(self, **tables: dbt.TableHandler) -> None:
-        """TODO"""
+        """
+        Arguments:
+            `**tables` (`TableHandler kwargs`): dictionary of table handlers
+                with named references to them
+        """
 
         if not tables:
             raise DatabaseError("Cannot define Database without any Tables.")

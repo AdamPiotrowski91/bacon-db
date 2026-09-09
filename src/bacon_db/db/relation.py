@@ -17,7 +17,7 @@ class RelationHandlerError(RuntimeError):
 
 
 class RelationRowData(dict):
-    """Helper class responsible for returning"""
+    """Helper class responsible for returning proper data."""
 
     def __init__(self, row_data: DBRowData | RelationRowData) -> None:
         """
