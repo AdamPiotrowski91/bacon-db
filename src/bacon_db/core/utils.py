@@ -1,0 +1,29 @@
+import inspect as ins
+import uuid
+
+
+# TODO: when used, does not account for methods without args
+def count_required_args(fn) -> int:
+    """Count required arguments in a callable."""
+
+    if not callable(fn):
+        raise ValueError("`fn` needs to be a callable.")
+
+    sig = ins.signature(fn)
+    required = 0
+
+    for p in sig.parameters.values():
+        if p.kind in (ins.Parameter.VAR_POSITIONAL, ins.Parameter.VAR_KEYWORD):
+            continue
+
+        # parameters without a default are required
+        if p.default is ins.Parameter.empty:
+            required += 1
+
+    return required
+
+
+def unique_id() -> str:
+    """Get unique ID (based on `uuid4`)"""
+
+    return str(uuid.uuid4())

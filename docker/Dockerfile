@@ -6,4 +6,4 @@ WORKDIR /app
 COPY src .
 
 # Install the library
-RUN pip install --no-cache-dir tox python-dotenv .
+RUN pip install --no-cache-dir .[dev]

@@ -24,14 +24,12 @@ var/
 wheels/
 *.egg-info/
 .installed.cfg
-*.sh
 *.egg
 *node_modules*
 *DS_Store*
 Untitled*
 *.vscode*
 MANIFEST
-tox.ini
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
